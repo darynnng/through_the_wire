@@ -16,13 +16,10 @@ import time
 import sys
 import os
 
-urllib3.disable_warnings(
+urllib3.disable_warnings()
 
-    def do_banner():
         
 if __name__ == "__main__":
-
-    do_banner()
     
     parser = argparse.ArgumentParser(description='Atlassian Confluence Server exploit (CVE-2022-26134)')
     parser.add_argument('--rhost', action="store", dest="rhost", required=True, help="The remote address to exploit")
